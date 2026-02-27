@@ -1,14 +1,14 @@
-'use client'
-import React, { useState, useEffect, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ShoppingCart, 
-  Heart, 
-  Zap, 
-  ChevronLeft, 
-  ChevronRight, 
-  ZoomIn, 
+"use client";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ShoppingCart,
+  Heart,
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
   Check,
   Truck,
   Shield,
@@ -16,239 +16,373 @@ import {
   Star,
   Share2,
   RefreshCcw,
-  Award
-} from 'lucide-react'
-import Navbar from '@/components/navbar'
-import ReviewSection from "../../Component/Testimonials/ReviewSection/page"
-import apiClient from '@/lib/api'
+  Award,
+} from "lucide-react";
+import Navbar from "@/components/navbar";
+import ReviewSection from "../../Component/Testimonials/ReviewSection/page";
+import apiClient from "@/lib/api";
 
 interface MemoryBook {
-  id: string
-  title: string
-  price: string
-  description: string
-  image: string
+  id: string;
+  title: string;
+  price: string;
+  description: string;
+  image: string;
 }
 
 function ProductContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [selectedProduct, setSelectedProduct] = useState<any>(null)
-  const [quantity, setQuantity] = useState(1)
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const [isZoomed, setIsZoomed] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [showShareMenu, setShowShareMenu] = useState(false)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   // Cart states
-  const [isInCart, setIsInCart] = useState(false)
-  const [cartLoading, setCartLoading] = useState(false)
+  const [isInCart, setIsInCart] = useState(false);
+  const [cartLoading, setCartLoading] = useState(false);
 
   // Wishlist states
-  const [isInWishlist, setIsInWishlist] = useState(false)
-  const [wishlistLoading, setWishlistLoading] = useState(false)
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
-    const storedProduct = localStorage.getItem('selectedProduct')
-    if (storedProduct) {
-      setSelectedProduct(JSON.parse(storedProduct))
+    const fetchProductDetails = async (productId: string) => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get(`/product/${productId}`);
+        if (response.data.success) {
+          const product = response.data.product;
+          setSelectedProduct({
+            id: product.productId || product.id,
+            image: product.image,
+            image2: product.image2,
+            title: product.name,
+            baseVariant: product.baseVariant || null,
+            basePrice: product.baseVariant?.price || product.basePrice,
+            price: (product.baseVariant?.price || product.basePrice) + " Rs",
+            description: product.description,
+            videoUrl: product.videoUrl,
+            media: product.media,
+            variants: product.variants,
+            benefits: product.benefits,
+            currentStock: product.currentStock,
+            discountPercent: product.discountPercent || 0,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching product details:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const productId = searchParams.get("id");
+    if (productId) {
+      fetchProductDetails(productId);
+    } else {
+      const storedProduct = localStorage.getItem("selectedProduct");
+      if (storedProduct) {
+        setSelectedProduct(JSON.parse(storedProduct));
+      }
     }
-  }, [])
+  }, [searchParams]);
 
-  const title = selectedProduct?.title || searchParams.get('title')
-  const description = selectedProduct?.description || searchParams.get('description')
-  const image12 = selectedProduct?.image || searchParams.get('image')
-  const pid = selectedProduct?.id || searchParams.get('id')
-  const variants = selectedProduct?.variants || [
-    { label: '500 ml', value: 50, priceIncrement: 0 },
-    { label: '1 Liter', value: 100, priceIncrement: 300 },
-    { label: '2 Liter', value: 200, priceIncrement: 500 }
-  ]
+  const title = selectedProduct?.title || searchParams.get("title");
+  const description =
+    selectedProduct?.description || searchParams.get("description");
+  const image12 = selectedProduct?.image || searchParams.get("image");
+  const pid = selectedProduct?.id || searchParams.get("id");
+  // Build variants: include base variant as first entry, then additional variants
+  const buildVariants = () => {
+    const bv = selectedProduct?.baseVariant;
+    const baseEntry = bv
+      ? {
+          label: bv.label,
+          value: bv.quantity,
+          unit: bv.unit,
+          priceIncrement: 0,
+        }
+      : null;
+    const additionalVariants =
+      selectedProduct?.variants?.length > 0 ? selectedProduct.variants : [];
+    if (baseEntry) {
+      return [baseEntry, ...additionalVariants];
+    }
+    return additionalVariants.length > 0
+      ? additionalVariants
+      : [
+          { label: "500 ml", value: 50, priceIncrement: 0 },
+          { label: "1 Liter", value: 100, priceIncrement: 300 },
+          { label: "2 Liter", value: 200, priceIncrement: 500 },
+        ];
+  };
+  const variants = buildVariants();
 
-  const basePriceString = (selectedProduct?.basePrice || selectedProduct?.price || searchParams.get('price') || '499').toString()
-  const basePrice = Number(basePriceString.replace(/[^0-9]/g, '')) || 499
-  const [selectedPages, setSelectedPages] = useState<number>(variants[0].value)
+  const basePriceString = (
+    selectedProduct?.baseVariant?.price ||
+    selectedProduct?.basePrice ||
+    selectedProduct?.price ||
+    searchParams.get("price") ||
+    "499"
+  ).toString();
+  const basePrice = Number(basePriceString.replace(/[^0-9]/g, "")) || 499;
+
+  const isOutOfStock = (selectedProduct?.currentStock ?? 1) <= 0;
+
+  // Safe initialization for selectedPages
+  const [selectedPages, setSelectedPages] = useState<number>(0);
+
+  // Update selectedPages when variants are loaded
+  useEffect(() => {
+    if (variants && variants.length > 0 && selectedPages === 0) {
+      setSelectedPages(variants[0].value);
+    }
+  }, [variants]);
 
   // Calculate final price based on page selection
   const getPriceByPages = () => {
-    const variant = variants.find((v: any) => v.value === selectedPages)
-    return basePrice + (variant?.priceIncrement || 0)
-  }
+    const variant = variants.find((v: any) => v.value === selectedPages);
+    return basePrice + (variant?.priceIncrement || 0);
+  };
 
-  const finalPrice = getPriceByPages()
+  const finalPrice = getPriceByPages();
+
+  // Compute discount
+  const discountPercent = selectedProduct?.discountPercent || 0;
+  const discountedPrice =
+    discountPercent > 0
+      ? Math.round(finalPrice * (1 - discountPercent / 100))
+      : finalPrice;
 
   const getQuantityLabel = (val: number) => {
-    const variant = variants.find((v: any) => v.value === val)
-    return variant?.label || `${val} units`
-  }
+    const variant = variants.find((v: any) => v.value === val);
+    return variant?.label || `${val} units`;
+  };
 
   // Check if product is in cart
   useEffect(() => {
     const checkCartStatus = async () => {
-      if (!pid) return
+      if (!pid) return;
       try {
-        setCartLoading(true)
-        const userString = localStorage.getItem('user')
+        setCartLoading(true);
+        const userString = localStorage.getItem("user");
         if (!userString) {
-          setCartLoading(false)
-          return
+          setCartLoading(false);
+          return;
         }
 
-        const user = JSON.parse(userString)
+        const user = JSON.parse(userString);
         const response = await apiClient.get(
-          `/checkcart?userId=${user._id}&productId=${pid}&quantityType=${selectedPages}`
-        )
-        const data = response.data
+          `/checkcart?userId=${user._id}&productId=${pid}&quantityType=${selectedPages}`,
+        );
+        const data = response.data;
 
         if (data.success) {
-          setIsInCart(data.isInCart)
+          setIsInCart(data.isInCart);
         }
       } catch (error) {
-        console.error('Cart check error:', error)
+        console.error("Cart check error:", error);
       } finally {
-        setCartLoading(false)
+        setCartLoading(false);
       }
-    }
+    };
 
-    checkCartStatus()
-  }, [pid, selectedPages])
+    checkCartStatus();
+  }, [pid, selectedPages]);
 
   // Check if product is in wishlist
   useEffect(() => {
     const checkWishlistStatus = async () => {
-      if (!pid) return
+      if (!pid) return;
       try {
-        setWishlistLoading(true)
-        const userString = localStorage.getItem('user')
+        setWishlistLoading(true);
+        const userString = localStorage.getItem("user");
         if (!userString) {
-          setWishlistLoading(false)
-          return
+          setWishlistLoading(false);
+          return;
         }
 
-        const user = JSON.parse(userString)
+        const user = JSON.parse(userString);
         const response = await apiClient.get(
-          `/checkwishlist?userId=${user._id}&productId=${pid}`
-        )
-        const data = response.data
+          `/checkwishlist?userId=${user._id}&productId=${pid}`,
+        );
+        const data = response.data;
 
         if (data.success) {
-          setIsInWishlist(data.isInWishlist)
+          setIsInWishlist(data.isInWishlist);
         }
       } catch (error) {
-        console.error('Wishlist check error:', error)
+        console.error("Wishlist check error:", error);
       } finally {
-        setWishlistLoading(false)
+        setWishlistLoading(false);
       }
-    }
+    };
 
-    checkWishlistStatus()
-  }, [pid])
+    checkWishlistStatus();
+  }, [pid]);
 
   const product: MemoryBook = {
-    id: pid || '',
-    title: title || '',
-    price: basePrice.toString() + ' Rs',
-    description: description || '',
-    image: image12 || ''
-  }
+    id: pid || "",
+    title: title || "",
+    price: basePrice.toString() + " Rs",
+    description: description || "",
+    image: image12 || "",
+  };
 
   const handleBuyNow = () => {
-    localStorage.setItem('checkoutData', JSON.stringify({
-      buyNow: true,
-      id: product.id,
-      image: product.image,
-      title: `${product.title} - ${getQuantityLabel(selectedPages)}`,
-      price: finalPrice.toString(),
-      description: product.description,
-      quantity: 1
-    }))
-    router.push(`/Component/CheckOut`)
-  }
+    localStorage.setItem(
+      "checkoutData",
+      JSON.stringify({
+        buyNow: true,
+        id: product.id,
+        image: product.image,
+        title: `${product.title} - ${getQuantityLabel(selectedPages)}`,
+        price: discountedPrice.toString(),
+        description: product.description,
+        quantity: 1,
+        quantityType: selectedPages,
+      }),
+    );
+    router.push(`/Component/CheckOut`);
+  };
 
   const handleAddToCart = async () => {
     if (isInCart) {
-      alert('Item already in cart!')
-      return
+      alert("Item already in cart!");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const userString = localStorage.getItem('user')
+      const userString = localStorage.getItem("user");
       if (!userString) {
-        alert('Please login to add items to cart')
-        return
+        alert("Please login to add items to cart");
+        return;
       }
 
-      const user = JSON.parse(userString)
-      const userId = user._id
+      const user = JSON.parse(userString);
+      const userId = user._id;
 
       const response = await apiClient.post(`/addtocart`, {
         userId: userId,
         productId: pid,
         image: image12,
         title: `${title} - ${getQuantityLabel(selectedPages)}`,
-        price: finalPrice,
+        price: discountedPrice,
         quantityType: selectedPages,
-      })
+      });
 
-      const data = response.data
+      const data = response.data;
 
       if (data.success) {
-        setIsInCart(true)
-        console.log('Added to cart successfully')
+        setIsInCart(true);
+        console.log("Added to cart successfully");
       } else {
-        console.error('Failed to add to cart:', data.message)
-        alert('Failed to add item to cart')
+        console.error("Failed to add to cart:", data.message);
+        alert("Failed to add item to cart");
       }
     } catch (error) {
-      console.error('Error adding to cart:', error)
-      alert('An error occurred. Please try again.')
+      console.error("Error adding to cart:", error);
+      alert("An error occurred. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const productMedia = [
-    { type: 'image', src: selectedProduct?.image || searchParams.get('image') || '/placeholder.jpg' },
-    { type: 'image', src: (selectedProduct?.image2 && selectedProduct?.image2 !== selectedProduct?.image) ? selectedProduct.image2 : (searchParams.get('image2') || selectedProduct?.image || searchParams.get('image') || '/placeholder.jpg') },
-    { type: 'video', src: selectedProduct?.videoUrl || searchParams.get('videoUrl') },
-  ]
+  // Consolidate media from the new 'media' array OR legacy fields
+  const getProductMedia = () => {
+    let media = [];
+
+    // 1. Try the new 'media' array first
+    if (
+      selectedProduct?.media &&
+      Array.isArray(selectedProduct.media) &&
+      selectedProduct.media.length > 0
+    ) {
+      media = selectedProduct.media.map((src: string) => ({
+        type:
+          src.startsWith("data:video") ||
+          src.includes(".mp4") ||
+          src.includes(".mov")
+            ? "video"
+            : "image",
+        src,
+      }));
+    }
+    // 2. Fallback to legacy fields if 'media' is empty
+    else {
+      if (selectedProduct?.image)
+        media.push({ type: "image", src: selectedProduct.image });
+      if (
+        selectedProduct?.image2 &&
+        selectedProduct.image2 !== selectedProduct.image
+      )
+        media.push({ type: "image", src: selectedProduct.image2 });
+      if (selectedProduct?.videoUrl)
+        media.push({ type: "video", src: selectedProduct.videoUrl });
+    }
+
+    // 3. Fallback to search params if still empty (for direct links)
+    if (media.length === 0) {
+      const paramImg = searchParams.get("image");
+      const paramImg2 = searchParams.get("image2");
+      const paramVid = searchParams.get("videoUrl");
+
+      if (paramImg) media.push({ type: "image", src: paramImg });
+      if (paramImg2 && paramImg2 !== paramImg)
+        media.push({ type: "image", src: paramImg2 });
+      if (paramVid) media.push({ type: "video", src: paramVid });
+    }
+
+    // Filter out any empty strings and ensure at least one placeholder exists
+    const filteredMedia = media.filter(
+      (m: { type: string; src: string }) => m.src && m.src.trim() !== "",
+    );
+    return filteredMedia.length > 0
+      ? filteredMedia
+      : [{ type: "image", src: "/placeholder.jpg" }];
+  };
+
+  const productMedia = getProductMedia();
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prev) =>
-      prev === 0 ? productMedia.length - 1 : prev - 1
-    )
-  }
+      prev === 0 ? productMedia.length - 1 : prev - 1,
+    );
+  };
 
   const handleNextImage = () => {
     setSelectedImageIndex((prev) =>
-      prev === productMedia.length - 1 ? 0 : prev + 1
-    )
-  }
+      prev === productMedia.length - 1 ? 0 : prev + 1,
+    );
+  };
 
   const handleToggleWishlist = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const userString = localStorage.getItem('user')
+      const userString = localStorage.getItem("user");
 
       if (!userString) {
-        alert('Please login to manage wishlist')
-        return
+        alert("Please login to manage wishlist");
+        return;
       }
 
-      const user = JSON.parse(userString)
-      const userId = user._id
+      const user = JSON.parse(userString);
+      const userId = user._id;
 
       if (isInWishlist) {
         const response = await apiClient.post(`/removefromwishlist`, {
           userId: userId,
-          productId: pid
-        })
+          productId: pid,
+        });
 
-        const data = response.data
+        const data = response.data;
 
         if (data.success) {
-          setIsInWishlist(false)
+          setIsInWishlist(false);
         }
       } else {
         const response = await apiClient.post(`/addtowishlist`, {
@@ -256,75 +390,101 @@ function ProductContent() {
           productId: pid,
           image: image12,
           title: title,
-          price: finalPrice
-        })
+          price: discountedPrice,
+        });
 
-        const data = response.data
+        const data = response.data;
 
         if (data.success) {
-          setIsInWishlist(true)
+          setIsInWishlist(true);
         }
       }
     } catch (error) {
-      console.error('Error toggling wishlist:', error)
-      alert('An error occurred. Please try again.')
+      console.error("Error toggling wishlist:", error);
+      alert("An error occurred. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Navbar />
 
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+          >
+            <div className="text-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-16 h-16 border-4 border-[#8B1F1F] border-t-transparent rounded-full mx-auto mb-4"
+              />
+              <p className="text-gray-600 font-medium text-lg">
+                Loading product details...
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Breadcrumb */}
-        <motion.nav 
+        <motion.nav
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-sm text-gray-600 mb-4 sm:mb-6 flex items-center gap-2 overflow-x-auto"
         >
-          <button onClick={() => router.push('/')} className="hover:text-[#8B1F1F] transition-colors whitespace-nowrap">Home</button>
+          <button
+            onClick={() => router.push("/")}
+            className="hover:text-[#8B1F1F] transition-colors whitespace-nowrap"
+          >
+            Home
+          </button>
           <span>/</span>
           <span className="text-gray-900 font-medium truncate">{title}</span>
         </motion.nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
-
           {/* Product Image Gallery Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8 lg:sticky lg:top-8 h-fit"
           >
-
             {/* Main Display */}
             <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 mb-4 group">
-
-              {productMedia[selectedImageIndex].type === 'image' ? (
+              {productMedia[selectedImageIndex].type === "image" ? (
                 <motion.img
                   key={selectedImageIndex}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: isZoomed ? 1.5 : 1 }}
                   transition={{ duration: 0.3 }}
-                  src={productMedia[selectedImageIndex].src || ''}
+                  src={productMedia[selectedImageIndex].src || ""}
                   alt={`${title} - View ${selectedImageIndex + 1}`}
                   className={`w-full h-full object-cover transition-transform duration-500 ${
-                    isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                    isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
                   }`}
                   onClick={() => setIsZoomed(!isZoomed)}
                 />
               ) : (
                 <video
-                  src={productMedia[selectedImageIndex].src || ''}
+                  src={productMedia[selectedImageIndex].src || ""}
                   autoPlay
                   muted
                   loop
                   playsInline
                   controls={false}
                   className="w-full h-full object-cover"
-                  key={productMedia[selectedImageIndex].src || selectedImageIndex}
+                  key={
+                    productMedia[selectedImageIndex].src || selectedImageIndex
+                  }
                 />
               )}
 
@@ -368,50 +528,58 @@ function ProductContent() {
 
             {/* Thumbnails */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-              {productMedia.map((item, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedImageIndex(index)}
-                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImageIndex === index
-                      ? 'border-[#8B1F1F] shadow-lg'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  {item.type === 'image' ? (
-                    <img src={item.src || ''} className="w-full h-full object-cover" alt={`Thumbnail ${index + 1}`} />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white text-xs sm:text-sm font-medium">
-                      ▶ Video
-                    </div>
-                  )}
-                </motion.button>
-              ))}
+              {productMedia.map(
+                (item: { type: string; src: string }, index: number) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      selectedImageIndex === index
+                        ? "border-[#8B1F1F] shadow-lg"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {item.type === "image" ? (
+                      <img
+                        src={item.src || ""}
+                        className="w-full h-full object-cover"
+                        alt={`Thumbnail ${index + 1}`}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white text-xs sm:text-sm font-medium">
+                        ▶ Video
+                      </div>
+                    )}
+                  </motion.button>
+                ),
+              )}
             </div>
-
           </motion.div>
 
           {/* Product Details Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="space-y-4 sm:space-y-6"
           >
-
             {/* Title, Rating and Price */}
             <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8">
-              
               {/* Rating */}
               <div className="flex items-center gap-2 mb-3 sm:mb-4">
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-4 h-4 sm:w-5 sm:h-5 fill-yellow-400 text-yellow-400" />
+                    <Star
+                      key={star}
+                      className="w-4 h-4 sm:w-5 sm:h-5 fill-yellow-400 text-yellow-400"
+                    />
                   ))}
                 </div>
-                <span className="text-xs sm:text-sm text-gray-600">(4.8 from 230 reviews)</span>
+                <span className="text-xs sm:text-sm text-gray-600">
+                  (4.8 from 230 reviews)
+                </span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
@@ -419,18 +587,24 @@ function ProductContent() {
               </h1>
 
               <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
-                <span className="text-3xl sm:text-4xl font-bold text-gray-900">₹{finalPrice}</span>
-                <span className="text-lg sm:text-xl text-gray-500 line-through">
-                  ₹{Math.round(parseInt(finalPrice.toString() || '0') * 1.2)}
+                <span className="text-3xl sm:text-4xl font-bold text-gray-900">
+                  ₹{discountedPrice}
                 </span>
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200 }}
-                  className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold rounded-full shadow-md"
-                >
-                  Save 17%
-                </motion.span>
+                {discountPercent > 0 && (
+                  <>
+                    <span className="text-lg sm:text-xl text-gray-500 line-through">
+                      ₹{finalPrice}
+                    </span>
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 200 }}
+                      className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold rounded-full shadow-md"
+                    >
+                      Save {discountPercent}%
+                    </motion.span>
+                  </>
+                )}
               </div>
 
               <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6">
@@ -441,39 +615,45 @@ function ProductContent() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <div className="flex flex-col items-center p-2 sm:p-3 bg-blue-50 rounded-lg">
                   <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-blue-900">Free Delivery</span>
+                  <span className="text-xs sm:text-sm font-medium text-blue-900">
+                    Free Delivery
+                  </span>
                 </div>
                 <div className="flex flex-col items-center p-2 sm:p-3 bg-green-50 rounded-lg">
                   <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-green-900">100% Fresh</span>
+                  <span className="text-xs sm:text-sm font-medium text-green-900">
+                    100% Fresh
+                  </span>
                 </div>
                 <div className="flex flex-col items-center p-2 sm:p-3 bg-purple-50 rounded-lg">
                   <RefreshCcw className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-purple-900">7-Day Return</span>
+                  <span className="text-xs sm:text-sm font-medium text-purple-900">
+                    7-Day Return
+                  </span>
                 </div>
                 <div className="flex flex-col items-center p-2 sm:p-3 bg-orange-50 rounded-lg">
                   <Award className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-orange-900">Premium Quality</span>
+                  <span className="text-xs sm:text-sm font-medium text-orange-900">
+                    Premium Quality
+                  </span>
                 </div>
               </div>
 
               {/* Quantity Selection */}
               <div className="mb-6">
-                <label className="block text-base sm:text-lg font-semibold mb-3">Select Quantity:</label>
+                <label className="block text-base sm:text-lg font-semibold mb-3">
+                  Select Quantity:
+                </label>
                 <div className="space-y-2 sm:space-y-3">
-                  {[
-                    { value: 50, label: '500 ml', price: basePrice, popular: false },
-                    { value: 100, label: '1 Liter', price: basePrice + 300, extra: 300, popular: true },
-                    { value: 200, label: '2 Liter', price: basePrice + 500, extra: 500, popular: false }
-                  ].map((option) => (
+                  {variants.map((option: any) => (
                     <motion.label
                       key={option.value}
                       whileHover={{ scale: 1.02, x: 4 }}
                       whileTap={{ scale: 0.98 }}
                       className={`relative flex items-center gap-3 p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all ${
                         selectedPages === option.value
-                          ? 'border-[#8B1F1F] bg-red-50 shadow-md'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? "border-[#8B1F1F] bg-red-50 shadow-md"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
                       }`}
                     >
                       <input
@@ -481,22 +661,23 @@ function ProductContent() {
                         name="pages"
                         value={option.value}
                         checked={selectedPages === option.value}
-                        onChange={() => setSelectedPages(option.value as 50 | 100 | 200)}
+                        onChange={() => setSelectedPages(option.value)}
                         className="w-4 h-4 sm:w-5 sm:h-5 accent-[#8B1F1F]"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm sm:text-base">{option.label}</span>
-                          {option.popular && (
-                            <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full">
-                              Popular
-                            </span>
-                          )}
+                          <span className="font-semibold text-sm sm:text-base">
+                            {option.label}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-gray-900 font-bold text-sm sm:text-base">₹{option.price}</span>
-                          {option.extra && (
-                            <span className="text-xs sm:text-sm text-green-600 font-medium">(+₹{option.extra})</span>
+                          <span className="text-gray-900 font-bold text-sm sm:text-base">
+                            ₹{basePrice + (option.priceIncrement || 0)}
+                          </span>
+                          {option.priceIncrement > 0 && (
+                            <span className="text-xs sm:text-sm text-green-600 font-medium">
+                              (+₹{option.priceIncrement})
+                            </span>
                           )}
                         </div>
                       </div>
@@ -516,15 +697,34 @@ function ProductContent() {
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleBuyNow}
-                  className="w-full bg-gradient-to-r from-[#8B1F1F] to-[#6B1515] hover:from-[#6B1515] hover:to-[#8B1F1F] text-white font-bold py-3 sm:py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-red-900/30 hover:shadow-xl hover:shadow-red-900/40 text-sm sm:text-base"
-                >
-                  <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Buy Now - Fast Checkout
-                </motion.button>
+                {isOutOfStock ? (
+                  <div className="w-full bg-red-100 border-2 border-red-300 text-red-700 font-bold py-3 sm:py-4 px-6 rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                    </svg>
+                    Out of Stock
+                  </div>
+                ) : (
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleBuyNow}
+                    className="w-full bg-gradient-to-r from-[#8B1F1F] to-[#6B1515] hover:from-[#6B1515] hover:to-[#8B1F1F] text-white font-bold py-3 sm:py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-red-900/30 hover:shadow-xl hover:shadow-red-900/40 text-sm sm:text-base"
+                  >
+                    <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
+                    Buy Now - Fast Checkout
+                  </motion.button>
+                )}
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {/* Add to Cart Button */}
@@ -532,11 +732,13 @@ function ProductContent() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleAddToCart}
-                    disabled={loading || cartLoading || isInCart}
+                    disabled={
+                      loading || cartLoading || isInCart || isOutOfStock
+                    }
                     className={`font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm ${
                       isInCart
-                        ? 'bg-green-50 border-green-400 text-green-800'
-                        : 'bg-white hover:bg-gray-50 text-gray-900 border-gray-300 hover:border-gray-400'
+                        ? "bg-green-50 border-green-400 text-green-800"
+                        : "bg-white hover:bg-gray-50 text-gray-900 border-gray-300 hover:border-gray-400"
                     }`}
                   >
                     {cartLoading ? (
@@ -570,8 +772,8 @@ function ProductContent() {
                     disabled={loading || wishlistLoading}
                     className={`font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm ${
                       isInWishlist
-                        ? 'bg-pink-50 border-pink-500 text-pink-600'
-                        : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-900 hover:border-gray-400'
+                        ? "bg-pink-50 border-pink-500 text-pink-600"
+                        : "bg-white hover:bg-gray-50 border-gray-300 text-gray-900 hover:border-gray-400"
                     }`}
                   >
                     {wishlistLoading ? (
@@ -601,7 +803,7 @@ function ProductContent() {
             </div>
 
             {/* Product Features */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -613,11 +815,31 @@ function ProductContent() {
               </h2>
               <ul className="space-y-3">
                 {[
-                  { icon: '🚚', text: 'Free delivery within 2-3 days', highlight: 'Fast shipping' },
-                  { icon: '🔄', text: '7-day hassle-free return policy', highlight: 'Easy returns' },
-                  { icon: '💳', text: 'Cash on delivery available', highlight: 'COD available' },
-                  { icon: '✅', text: '100% authentic KAAVERI products', highlight: 'Authentic' },
-                  { icon: '📞', text: '24/7 customer support', highlight: 'Always here' }
+                  {
+                    icon: "🚚",
+                    text: "Free delivery within 2-3 days",
+                    highlight: "Fast shipping",
+                  },
+                  {
+                    icon: "🔄",
+                    text: "7-day hassle-free return policy",
+                    highlight: "Easy returns",
+                  },
+                  {
+                    icon: "💳",
+                    text: "Cash on delivery available",
+                    highlight: "COD available",
+                  },
+                  {
+                    icon: "✅",
+                    text: "100% authentic KAAVERI products",
+                    highlight: "Authentic",
+                  },
+                  {
+                    icon: "📞",
+                    text: "24/7 customer support",
+                    highlight: "Always here",
+                  },
                 ].map((feature, index) => (
                   <motion.li
                     key={index}
@@ -626,10 +848,16 @@ function ProductContent() {
                     transition={{ delay: 0.4 + index * 0.1 }}
                     className="flex items-start gap-3 p-2 sm:p-3 hover:bg-gray-50 rounded-lg transition-colors"
                   >
-                    <span className="text-xl sm:text-2xl flex-shrink-0">{feature.icon}</span>
+                    <span className="text-xl sm:text-2xl flex-shrink-0">
+                      {feature.icon}
+                    </span>
                     <div>
-                      <span className="text-sm sm:text-base text-gray-700">{feature.text}</span>
-                      <span className="block text-xs text-gray-500 mt-0.5">{feature.highlight}</span>
+                      <span className="text-sm sm:text-base text-gray-700">
+                        {feature.text}
+                      </span>
+                      <span className="block text-xs text-gray-500 mt-0.5">
+                        {feature.highlight}
+                      </span>
                     </div>
                   </motion.li>
                 ))}
@@ -640,26 +868,30 @@ function ProductContent() {
       </div>
       <ReviewSection />
     </div>
-  )
+  );
 }
 
 function Page() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-[#8B1F1F] border-t-transparent rounded-full mx-auto mb-4"
-          />
-          <p className="text-gray-600 font-medium text-lg">Loading product details...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-16 h-16 border-4 border-[#8B1F1F] border-t-transparent rounded-full mx-auto mb-4"
+            />
+            <p className="text-gray-600 font-medium text-lg">
+              Loading product details...
+            </p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <ProductContent />
     </Suspense>
-  )
+  );
 }
 
-export default Page
+export default Page;

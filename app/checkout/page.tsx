@@ -285,138 +285,6 @@ function CheckoutContent() {
     };
   };
 
-  // const handleCODOrder = async () => {
-  //   if (!validateForm() || !user) return;
-
-  //   setSubmitting(true);
-
-  //   try {
-  //     const orderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-  //     const originalTotal = calculateSubtotal();
-
-  //     const orderData = {
-  //       userId: user._id,
-  //       orderId,
-  //       orderItems: products,
-  //       subTotal: originalTotal,
-  //       discountAmount: couponDiscount,
-  //       totalAmount: calculateTotal(),
-  //       orderStatus: 'pending',
-  //       paymentMethod: 'cod',
-  //       paymentStatus: 'pending',
-  //       shippingAddress,
-  //       couponDiscount: couponDiscount
-  //     };
-
-  //     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/placeorder`, orderData);
-
-  //     if (response.data.success) {
-  //       const isBuyNow = searchParams.get('buyNow') === 'true';
-  //       if (!isBuyNow) {
-  //         await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/clearcart/${user._id}`);
-  //       }
-  //       router.push(`/Component/Orders/OrderDetails?orderId=${orderId}`);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error placing COD order:', error);
-  //     alert('Failed to place order. Please try again.');
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
-
-  // const handleRazorpayOrder = async () => {
-  //   if (!validateForm() || !user || !razorpayLoaded) return;
-
-  //   setSubmitting(true);
-
-  //   try {
-  //     const totalInPaise = Math.round(calculateTotal() * 100);
-
-  //     const options: any = {
-  //       key: "rzp_test_S2KmVnYY70GNfF",
-  //       amount: totalInPaise,
-  //       currency: 'INR',
-  //       name: 'KAAVERI देशी',
-  //       description: `Pay ₹${calculateTotal().toFixed(2)} for your order`,
-  //       prefill: {
-  //         name: user.name,
-  //         email: user.email,
-  //         contact: shippingAddress.phone || user.phone || ''
-  //       },
-  //       theme: {
-  //         color: '#8B1F1F'
-  //       },
-  //       modal: {
-  //         ondismiss: function() {
-  //           setSubmitting(false);
-  //           alert('Payment cancelled');
-  //         }
-  //       },
-  //       handler: async function (response: any) {
-  //         const orderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-  //         const originalTotal = calculateSubtotal();
-
-  //         const orderData = {
-  //           userId: user._id,
-  //           orderId,
-  //           orderItems: products,
-  //           subTotal: originalTotal,
-  //           discountAmount: couponDiscount,
-  //           totalAmount: calculateTotal(),
-  //           orderStatus: 'confirmed',
-  //           paymentMethod: 'razorpay',
-  //           paymentStatus: 'paid',
-  //           paymentDetails: {
-  //             razorpay_payment_id: response.razorpay_payment_id,
-  //             razorpay_order_id: response.razorpay_order_id,
-  //           },
-  //           shippingAddress,
-  //           couponDiscount: couponDiscount
-  //         };
-
-  //         try {
-  //           const placeOrderResponse = await axios.post(
-  //             `${process.env.NEXT_PUBLIC_API_URL}/placeorder`,
-  //             orderData
-  //           );
-
-  //           if (placeOrderResponse.data.success) {
-  //             const isBuyNow = searchParams.get('buyNow') === 'true';
-  //             if (!isBuyNow) {
-  //               await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/clearcart/${user._id}`);
-  //             }
-  //             router.push(`/Component/Orders/OrderDetails?orderId=${orderId}`);
-  //           }
-  //         } catch (orderError) {
-  //           console.error('Order creation failed:', orderError);
-  //           alert('Payment successful but order creation failed. Contact support.');
-  //         }
-  //       }
-  //     };
-
-  //     const rzp: any = new (window as any).Razorpay(options);
-  //     rzp.open();
-
-  //   } catch (error) {
-  //     console.error('Payment error:', error);
-  //     alert('Failed to initiate payment. Please try again.');
-  //     setSubmitting(false);
-  //   }
-  // };
-
-  // const handlePaymentSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (paymentMethod === 'cod') {
-  //     handleCODOrder();
-  //   } else {
-  //     handleRazorpayOrder();
-  //   }
-  // };
-
-  // First, create a backend endpoint to create Razorpay order
-  // Add this function to handle creating Razorpay order on your backend
-
   const createRazorpayOrder = async (amount: number) => {
     try {
       const response = await apiClient.post(`/create-razorpay-order`, {
@@ -462,7 +330,7 @@ function CheckoutContent() {
           await apiClient.post(`/clearcart/${user._id}`);
         }
         localStorage.setItem("lastOrderId", orderId);
-        router.push(`/Component/Orders/OrderDetails`);
+        router.push(`/orders/details`);
       } else {
         alert("Failed to place order. Please try again.");
       }
@@ -567,7 +435,7 @@ function CheckoutContent() {
               }
 
               localStorage.setItem("lastOrderId", ourOrderId);
-              router.push(`/Component/Orders/OrderDetails`);
+              router.push(`/orders/details`);
             } else {
               throw new Error(
                 placeOrderResponse.data.message || "Order creation failed",
@@ -582,7 +450,7 @@ function CheckoutContent() {
               "Order creation failed";
 
             router.push(
-              `/Component/Orders/OrderFailure?paymentId=${response.razorpay_payment_id}&error=${encodeURIComponent(errorMsg)}`,
+              `/orders/failure?paymentId=${response.razorpay_payment_id}&error=${encodeURIComponent(errorMsg)}`,
             );
 
             // Optional: Send error to your backend for tracking
@@ -608,7 +476,7 @@ function CheckoutContent() {
       rzp.on("payment.failed", function (response: any) {
         console.error("Payment failed:", response.error);
         router.push(
-          `/Component/Orders/OrderFailure?error=${encodeURIComponent(response.error.description)}`,
+          `/orders/failure?error=${encodeURIComponent(response.error.description)}`,
         );
         setSubmitting(false);
       });
@@ -620,9 +488,7 @@ function CheckoutContent() {
         error.response?.data?.message ||
         error.message ||
         "Failed to initiate payment";
-      router.push(
-        `/Component/Orders/OrderFailure?error=${encodeURIComponent(errorMsg)}`,
-      );
+      router.push(`/orders/failure?error=${encodeURIComponent(errorMsg)}`);
       setSubmitting(false);
     }
   };

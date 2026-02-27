@@ -45,9 +45,9 @@ export default function Navbar() {
   const toggleMenu = () => setIsOpen(!isOpen)
 
   const navigationItems = [
-    { label: 'Cart', icon: ShoppingCart, onClick: () => router.push('/Component/Cart'), showOn: 'mobile' },
-    { label: 'Orders', icon: Package, onClick: () => router.push('/Component/Orders/MyOrdersPage'), showOn: 'desktop' },
-    { label: 'Wishlist', icon: Heart, onClick: () => router.push('/Component/WishList'), showOn: 'desktop' },
+    { label: 'Cart', icon: ShoppingCart, onClick: () => router.push('/cart'), showOn: 'mobile' },
+    { label: 'Orders', icon: Package, onClick: () => router.push('/orders'), showOn: 'desktop' },
+    { label: 'Wishlist', icon: Heart, onClick: () => router.push('/wishlist'), showOn: 'desktop' },
   ]
 
   const handleProfileClick = () => {
@@ -89,56 +89,60 @@ export default function Navbar() {
             </div>
           </motion.div>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Cart */}
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/Component/Cart')}
-              className="relative flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-all duration-200 backdrop-blur-sm"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span>Cart</span>
-              {cartCount > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 text-[#8B1F1F] text-xs font-bold rounded-full flex items-center justify-center"
+            {/* Authenticated Links (Cart, Orders, Wishlist) */}
+            {user && (
+              <>
+                {/* Cart */}
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => router.push('/cart')}
+                  className="relative flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-all duration-200 backdrop-blur-sm"
                 >
-                  {cartCount}
-                </motion.span>
-              )}
-            </motion.button>
+                  <ShoppingCart className="w-4 h-4" />
+                  <span>Cart</span>
+                  {cartCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 text-[#8B1F1F] text-xs font-bold rounded-full flex items-center justify-center"
+                    >
+                      {cartCount}
+                    </motion.span>
+                  )}
+                </motion.button>
 
-            {/* Orders */}
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/Component/Orders/MyOrdersPage')}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-all duration-200"
-            >
-              <Package className="w-4 h-4" />
-              <span>Orders</span>
-            </motion.button>
+                {/* Orders */}
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => router.push('/orders')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-all duration-200"
+                >
+                  <Package className="w-4 h-4" />
+                  <span>Orders</span>
+                </motion.button>
 
-            {/* Wishlist */}
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/Component/WishList')}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-all duration-200"
-            >
-              <Heart className="w-4 h-4" />
-              <span>Wishlist</span>
-            </motion.button>
+                {/* Wishlist */}
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => router.push('/wishlist')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-all duration-200"
+                >
+                  <Heart className="w-4 h-4" />
+                  <span>Wishlist</span>
+                </motion.button>
+              </>
+            )}
 
             {/* Dashboard - Admin Only */}
             {/* {user?.role === 'admin' && (
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/Component/Admin/dashboard')}
+                onClick={() => router.push('/admin/dashboard')}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-all duration-200 border border-yellow-400/30"
               >
                 <LayoutDashboard className="w-4 h-4" />
@@ -192,7 +196,7 @@ export default function Navbar() {
                         <div className="py-1">
                           <button
                             onClick={() => {
-                              router.push('/Component/Orders/MyOrdersPage')
+                              router.push('/orders')
                               setIsDropdownOpen(false)
                             }}
                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -202,7 +206,7 @@ export default function Navbar() {
                           </button>
                           <button
                             onClick={() => {
-                              router.push('/Component/WishList')
+                              router.push('/wishlist')
                               setIsDropdownOpen(false)
                             }}
                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -213,7 +217,7 @@ export default function Navbar() {
                           {user?.role === 'admin' && (
                             <button
                               onClick={() => {
-                                router.push('/Component/Admin/dashboard')
+                                router.push('/admin/dashboard')
                                 setIsDropdownOpen(false)
                               }}
                               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -242,7 +246,7 @@ export default function Navbar() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push('/Component/Auth/SignIn')}
+                  onClick={() => router.push('/signin')}
                   className="px-5 py-2 text-sm font-medium bg-white text-[#8B1F1F] rounded-lg hover:bg-yellow-50 transition-all duration-200 shadow-md"
                 >
                   Login
@@ -254,18 +258,20 @@ export default function Navbar() {
           {/* Mobile Menu Button & Cart */}
           <div className="flex md:hidden items-center gap-2">
             {/* Mobile Cart */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => router.push('/Component/Cart')}
-              className="relative p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 text-[#8B1F1F] text-xs font-bold rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </motion.button>
+            {user && (
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => router.push('/cart')}
+                className="relative p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 text-[#8B1F1F] text-xs font-bold rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </motion.button>
+            )}
 
             {/* Hamburger Menu */}
             <motion.button
@@ -289,31 +295,36 @@ export default function Navbar() {
               className="md:hidden overflow-hidden"
             >
               <div className="py-3 space-y-1 border-t border-white/20">
-                {/* Orders */}
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    router.push('/Component/Orders/MyOrdersPage')
-                    setIsOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <Package className="w-5 h-5" />
-                  My Orders
-                </motion.button>
+                {/* Logged in mobile links */}
+                {user && (
+                  <>
+                    {/* Orders */}
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        router.push('/orders')
+                        setIsOpen(false)
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <Package className="w-5 h-5" />
+                      My Orders
+                    </motion.button>
 
-                {/* Wishlist */}
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    router.push('/Component/WishList')
-                    setIsOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <Heart className="w-5 h-5" />
-                  Wishlist
-                </motion.button>
+                    {/* Wishlist */}
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        router.push('/wishlist')
+                        setIsOpen(false)
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <Heart className="w-5 h-5" />
+                      Wishlist
+                    </motion.button>
+                  </>
+                )}
 
                 {/* Dashboard - Admin Only */}
                 {user?.role === 'admin' && (
@@ -351,7 +362,7 @@ export default function Navbar() {
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       onClick={() => {
-                        router.push('/Component/Auth/SignIn')
+                        router.push('/signin')
                         setIsOpen(false)
                       }}
                       className="w-full px-4 py-3 text-sm font-medium bg-white text-[#8B1F1F] rounded-lg hover:bg-yellow-50 transition-colors"

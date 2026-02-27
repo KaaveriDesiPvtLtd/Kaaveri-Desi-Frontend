@@ -17,12 +17,9 @@ import {
   Share2,
   RefreshCcw,
   Award,
-  Clock,
-  MapPin,
-  BadgeCheck,
 } from "lucide-react";
 import Navbar from "@/components/navbar";
-import ReviewSection from "../../Component/Testimonials/ReviewSection/page";
+import ReviewSection from "@/app/Component/Testimonials/ReviewSection/page";
 import apiClient from "@/lib/api";
 
 interface MemoryBook {
@@ -37,10 +34,12 @@ function ProductContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   // Cart states
   const [isInCart, setIsInCart] = useState(false);
@@ -51,11 +50,53 @@ function ProductContent() {
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
-    const storedProduct = localStorage.getItem("selectedProduct");
-    if (storedProduct) {
-      setSelectedProduct(JSON.parse(storedProduct));
+    const fetchProductDetails = async (productId: string) => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get(`/product/${productId}`);
+        if (response.data.success) {
+          const product = response.data.product;
+          setSelectedProduct({
+            id: product.productId || product.id,
+            image: product.image,
+            image2: product.image2,
+            title: product.name,
+            baseVariant: product.baseVariant || null,
+            basePrice: product.baseVariant?.price || product.basePrice,
+            price: (product.baseVariant?.price || product.basePrice) + " Rs",
+            description: product.description,
+            videoUrl: product.videoUrl,
+            media: product.media,
+            variants: product.variants,
+            benefits: product.benefits,
+            quantity: product.baseVariant?.quantity || product.quantity,
+            unit: product.baseVariant?.unit || product.unit,
+            currentStock: product.currentStock,
+            discountPercent: product.discountPercent || 0,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching product details:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const productId = searchParams.get("id");
+    if (productId) {
+      fetchProductDetails(productId);
+    } else {
+      const storedProduct = localStorage.getItem("selectedProduct");
+      if (storedProduct) {
+        setSelectedProduct(JSON.parse(storedProduct));
+      }
     }
-  }, []);
+
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, [searchParams]);
 
   const title = selectedProduct?.title || searchParams.get("title");
   const description =
@@ -74,17 +115,15 @@ function ProductContent() {
         }
       : null;
     const additionalVariants =
-      selectedProduct?.variants?.length > 0 ? selectedProduct.variants : [];
+      selectedProduct?.variants && selectedProduct.variants.length > 0
+        ? selectedProduct.variants
+        : [];
     if (baseEntry) {
       return [baseEntry, ...additionalVariants];
     }
     return additionalVariants.length > 0
       ? additionalVariants
-      : [
-          { label: "500 gm", value: 50, priceIncrement: 0 },
-          { label: "1 Kg", value: 100, priceIncrement: 300 },
-          { label: "2 Kg", value: 200, priceIncrement: 500 },
-        ];
+      : [{ label: "500 ml", value: 50, priceIncrement: 0 }];
   };
   const variants = buildVariants();
 
@@ -93,9 +132,9 @@ function ProductContent() {
     selectedProduct?.basePrice ||
     selectedProduct?.price ||
     searchParams.get("price") ||
-    "699"
+    "499"
   ).toString();
-  const basePrice = Number(basePriceString.replace(/[^0-9]/g, "")) || 699;
+  const basePrice = Number(basePriceString.replace(/[^0-9]/g, "")) || 499;
 
   const isOutOfStock = (selectedProduct?.currentStock ?? 1) <= 0;
 
@@ -109,6 +148,7 @@ function ProductContent() {
     }
   }, [variants]);
 
+  // Calculate final price based on page selection
   const getPriceByPages = () => {
     const variant = variants.find((v: any) => v.value === selectedPages);
     return basePrice + (variant?.priceIncrement || 0);
@@ -128,6 +168,7 @@ function ProductContent() {
     return variant?.label || `${val} units`;
   };
 
+  // Check if product is in cart
   useEffect(() => {
     const checkCartStatus = async () => {
       if (!pid) return;
@@ -158,6 +199,7 @@ function ProductContent() {
     checkCartStatus();
   }, [pid, selectedPages]);
 
+  // Check if product is in wishlist
   useEffect(() => {
     const checkWishlistStatus = async () => {
       if (!pid) return;
@@ -197,6 +239,11 @@ function ProductContent() {
   };
 
   const handleBuyNow = () => {
+    if (!user) {
+      router.push("/signin");
+      return;
+    }
+
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({
@@ -210,7 +257,7 @@ function ProductContent() {
         quantityType: selectedPages,
       }),
     );
-    router.push(`/Component/CheckOut`);
+    router.push(`/checkout`);
   };
 
   const handleAddToCart = async () => {
@@ -375,16 +422,38 @@ function ProductContent() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Navbar />
 
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+          >
+            <div className="text-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-16 h-16 border-4 border-[#8B1F1F] border-t-transparent rounded-full mx-auto mb-4"
+              />
+              <p className="text-gray-600 font-medium text-lg">
+                Loading product details...
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Breadcrumb */}
         <motion.nav
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 flex items-center gap-2 overflow-x-auto whitespace-nowrap"
+          className="text-sm text-gray-600 mb-4 sm:mb-6 flex items-center gap-2 overflow-x-auto"
         >
           <button
             onClick={() => router.push("/")}
-            className="hover:text-[#8B1F1F] transition-colors"
+            className="hover:text-[#8B1F1F] transition-colors whitespace-nowrap"
           >
             Home
           </button>
@@ -451,9 +520,9 @@ function ProductContent() {
 
               {/* Zoom Indicator */}
               {!isZoomed && (
-                <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/60 backdrop-blur-sm text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 sm:gap-2">
+                <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/60 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 sm:gap-2">
                   <ZoomIn className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Click to zoom</span>
+                  Click to zoom
                 </div>
               )}
 
@@ -526,6 +595,13 @@ function ProductContent() {
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
                 {title}
+                {selectedProduct?.quantity !== undefined &&
+                  selectedProduct?.quantity !== null &&
+                  selectedProduct?.unit && (
+                    <span className="ml-3 text-lg font-medium text-[#8B1F1F]">
+                      ({selectedProduct.quantity} {selectedProduct.unit})
+                    </span>
+                  )}
               </h1>
 
               <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
@@ -555,42 +631,30 @@ function ProductContent() {
 
               {/* Trust Badges */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
-                <motion.div
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className="flex flex-col items-center p-2 sm:p-3 bg-blue-50 rounded-lg"
-                >
+                <div className="flex flex-col items-center p-2 sm:p-3 bg-blue-50 rounded-lg">
                   <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-blue-900 text-center">
+                  <span className="text-xs sm:text-sm font-medium text-blue-900">
                     Free Delivery
                   </span>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className="flex flex-col items-center p-2 sm:p-3 bg-green-50 rounded-lg"
-                >
+                </div>
+                <div className="flex flex-col items-center p-2 sm:p-3 bg-green-50 rounded-lg">
                   <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-green-900 text-center">
+                  <span className="text-xs sm:text-sm font-medium text-green-900">
                     100% Fresh
                   </span>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className="flex flex-col items-center p-2 sm:p-3 bg-purple-50 rounded-lg"
-                >
+                </div>
+                <div className="flex flex-col items-center p-2 sm:p-3 bg-purple-50 rounded-lg">
                   <RefreshCcw className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-purple-900 text-center">
+                  <span className="text-xs sm:text-sm font-medium text-purple-900">
                     7-Day Return
                   </span>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className="flex flex-col items-center p-2 sm:p-3 bg-orange-50 rounded-lg"
-                >
+                </div>
+                <div className="flex flex-col items-center p-2 sm:p-3 bg-orange-50 rounded-lg">
                   <Award className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 mb-1" />
-                  <span className="text-xs sm:text-sm font-medium text-orange-900 text-center">
+                  <span className="text-xs sm:text-sm font-medium text-orange-900">
                     Premium Quality
                   </span>
-                </motion.div>
+                </div>
               </div>
 
               {/* Quantity Selection */}
@@ -670,24 +734,36 @@ function ProductContent() {
                   </div>
                 ) : (
                   <motion.button
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={user ? { scale: 1.02, y: -2 } : {}}
+                    whileTap={user ? { scale: 0.98 } : {}}
                     onClick={handleBuyNow}
                     className="w-full bg-gradient-to-r from-[#8B1F1F] to-[#6B1515] hover:from-[#6B1515] hover:to-[#8B1F1F] text-white font-bold py-3 sm:py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-red-900/30 hover:shadow-xl hover:shadow-red-900/40 text-sm sm:text-base"
                   >
                     <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Buy Now - Fast Checkout
+                    {user ? "Buy Now - Fast Checkout" : "Login to Buy Now"}
                   </motion.button>
                 )}
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {/* Add to Cart Button */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={
+                      !user || loading || cartLoading || isInCart
+                        ? {}
+                        : { scale: 1.02 }
+                    }
+                    whileTap={
+                      !user || loading || cartLoading || isInCart
+                        ? {}
+                        : { scale: 0.98 }
+                    }
                     onClick={handleAddToCart}
                     disabled={
-                      loading || cartLoading || isInCart || isOutOfStock
+                      loading ||
+                      cartLoading ||
+                      isInCart ||
+                      !user ||
+                      isOutOfStock
                     }
                     className={`font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm ${
                       isInCart
@@ -720,10 +796,14 @@ function ProductContent() {
 
                   {/* Wishlist Toggle Button */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={
+                      !user || loading || wishlistLoading ? {} : { scale: 1.02 }
+                    }
+                    whileTap={
+                      !user || loading || wishlistLoading ? {} : { scale: 0.98 }
+                    }
                     onClick={handleToggleWishlist}
-                    disabled={loading || wishlistLoading}
+                    disabled={loading || wishlistLoading || !user}
                     className={`font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm ${
                       isInWishlist
                         ? "bg-pink-50 border-pink-500 text-pink-600"

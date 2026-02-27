@@ -36,8 +36,8 @@ function Footer() {
             <h4 className="text-lg font-bold text-amber-100 mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li><Link href="/" className="text-amber-50 hover:text-amber-200 transition">Home</Link></li>
-              <li><Link href="/FooterCompo/AboutUs" className="text-amber-50 hover:text-amber-200 transition">About Us</Link></li>
-              <li><Link href="/FooterCompo/FAQ" className="text-amber-50 hover:text-amber-200 transition">FAQ</Link></li>
+              <li><Link href="/about" className="text-amber-50 hover:text-amber-200 transition">About Us</Link></li>
+              <li><Link href="/faq" className="text-amber-50 hover:text-amber-200 transition">FAQ</Link></li>
             </ul>
           </div>
 
@@ -45,8 +45,8 @@ function Footer() {
           <div>
             <h4 className="text-lg font-bold text-amber-100 mb-4">Help & Support</h4>
             <ul className="space-y-2">
-              <li><Link href="/FooterCompo/Shipping" className="text-amber-50 hover:text-amber-200 transition">Shipping & Returns</Link></li>
-              <li><Link href="/FooterCompo/Privacy" className="text-amber-50 hover:text-amber-200 transition">Privacy Policy</Link></li>
+              <li><Link href="/shipping" className="text-amber-50 hover:text-amber-200 transition">Shipping & Returns</Link></li>
+              <li><Link href="/privacy" className="text-amber-50 hover:text-amber-200 transition">Privacy Policy</Link></li>
               <li>
                 <a 
                   href="https://wa.me/919289148411" 
