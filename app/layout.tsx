@@ -1,8 +1,8 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
-import Footer from '@/components/footer'
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import "./globals.css";
+import Footer from "@/components/footer";
 
 // import "../public/Images/logo.png"
 
@@ -10,40 +10,41 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Kaaveri Desi - Fresh Milk Delivery',
-  description: 'Order fresh, pure milk delivered to your doorstep. Experience authentic dairy excellence with Kaaveri Desi.',
-  generator: 'Shubh',
+  title: "Kaaveri Desi - Fresh Milk Delivery",
+  description:
+    "Order fresh, pure milk delivered to your doorstep. Experience authentic dairy excellence with Kaaveri Desi.",
+  generator: "Shubh",
   icons: {
-    icon: '/Images/logo.png',
+    icon: "/Images/logo.png",
   },
   openGraph: {
-    title: 'Kaaveri Desi - Fresh Milk Delivery',
-    description: 'Order fresh, pure milk delivered to your doorstep. Experience authentic dairy excellence with Kaaveri Desi.',
-    // url: 'https://kaveridesi.com',
-    siteName: 'Kaaveri Desi',
+    title: "Kaaveri Desi - Fresh Milk Delivery",
+    description:
+      "Order fresh, pure milk delivered to your doorstep. Experience authentic dairy excellence with Kaaveri Desi.",
+    // url: 'https://kaaveridesi.com',
+    siteName: "Kaaveri Desi",
     images: [
       {
-        url: '/Images/logo.png',
+        url: "/Images/logo.png",
         width: 1200,
         height: 1200,
-        alt: 'Kaaveri Desi Logo',
-      }
+        alt: "Kaaveri Desi Logo",
+      },
     ],
-    type: 'website',
+    type: "website",
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Kaaveri Desi - Fresh Milk Delivery',
-    description: 'Order fresh, pure milk delivered to your doorstep.',
-    images: ['/Images/logo.png'],
+    card: "summary_large_image",
+    title: "Kaaveri Desi - Fresh Milk Delivery",
+    description: "Order fresh, pure milk delivered to your doorstep.",
+    images: ["/Images/logo.png"],
   },
-}
-
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -51,8 +52,8 @@ export default function RootLayout({
         {children}
         <Analytics />
 
-        <Footer/>
+        <Footer />
       </body>
     </html>
-  )
+  );
 }
