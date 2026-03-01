@@ -21,6 +21,7 @@ import {
 import Navbar from "@/components/navbar";
 import ReviewSection from "../../Component/Testimonials/ReviewSection/page";
 import apiClient from "@/lib/api";
+import { convertToBaseUnit } from "@/lib/unitConversion";
 
 interface MemoryBook {
   id: string;
@@ -130,17 +131,30 @@ function ProductContent() {
   ).toString();
   const basePrice = Number(basePriceString.replace(/[^0-9]/g, "")) || 499;
 
-  const isOutOfStock = (selectedProduct?.currentStock ?? 1) <= 0;
+  const availableVariants = variants.filter((option: any) => {
+    const requiredQuantity = convertToBaseUnit(
+      option.value || 0,
+      option.unit || selectedProduct?.unit || "",
+      selectedProduct?.unit || "",
+    );
+    return (selectedProduct?.currentStock ?? 0) >= requiredQuantity;
+  });
+
+  const isOutOfStock = availableVariants.length === 0;
 
   // Safe initialization for selectedPages
   const [selectedPages, setSelectedPages] = useState<number>(0);
 
   // Update selectedPages when variants are loaded
   useEffect(() => {
-    if (variants && variants.length > 0 && selectedPages === 0) {
-      setSelectedPages(variants[0].value);
+    if (
+      availableVariants &&
+      availableVariants.length > 0 &&
+      selectedPages === 0
+    ) {
+      setSelectedPages(availableVariants[0].value);
     }
-  }, [variants]);
+  }, [availableVariants, selectedPages]);
 
   // Calculate final price based on page selection
   const getPriceByPages = () => {
@@ -640,60 +654,62 @@ function ProductContent() {
               </div>
 
               {/* Quantity Selection */}
-              <div className="mb-6">
-                <label className="block text-base sm:text-lg font-semibold mb-3">
-                  Select Quantity:
-                </label>
-                <div className="space-y-2 sm:space-y-3">
-                  {variants.map((option: any) => (
-                    <motion.label
-                      key={option.value}
-                      whileHover={{ scale: 1.02, x: 4 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`relative flex items-center gap-3 p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                        selectedPages === option.value
-                          ? "border-[#8B1F1F] bg-red-50 shadow-md"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="pages"
-                        value={option.value}
-                        checked={selectedPages === option.value}
-                        onChange={() => setSelectedPages(option.value)}
-                        className="w-4 h-4 sm:w-5 sm:h-5 accent-[#8B1F1F]"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm sm:text-base">
-                            {option.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-gray-900 font-bold text-sm sm:text-base">
-                            ₹{basePrice + (option.priceIncrement || 0)}
-                          </span>
-                          {option.priceIncrement > 0 && (
-                            <span className="text-xs sm:text-sm text-green-600 font-medium">
-                              (+₹{option.priceIncrement})
+              {!isOutOfStock && (
+                <div className="mb-6">
+                  <label className="block text-base sm:text-lg font-semibold mb-3">
+                    Select Quantity:
+                  </label>
+                  <div className="space-y-2 sm:space-y-3">
+                    {availableVariants.map((option: any) => (
+                      <motion.label
+                        key={option.value}
+                        whileHover={{ scale: 1.02, x: 4 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`relative flex items-center gap-3 p-3 sm:p-4 border-2 rounded-xl transition-all cursor-pointer ${
+                          selectedPages === option.value
+                            ? "border-[#8B1F1F] bg-red-50 shadow-md"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="pages"
+                          value={option.value}
+                          checked={selectedPages === option.value}
+                          onChange={() => setSelectedPages(option.value)}
+                          className="w-4 h-4 sm:w-5 sm:h-5 accent-[#8B1F1F]"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm sm:text-base">
+                              {option.label}
                             </span>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-gray-900 font-bold text-sm sm:text-base">
+                              ₹{basePrice + (option.priceIncrement || 0)}
+                            </span>
+                            {option.priceIncrement > 0 && (
+                              <span className="text-xs sm:text-sm text-green-600 font-medium">
+                                (+₹{option.priceIncrement})
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {selectedPages === option.value && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="w-6 h-6 bg-[#8B1F1F] rounded-full flex items-center justify-center"
-                        >
-                          <Check className="w-4 h-4 text-white" />
-                        </motion.div>
-                      )}
-                    </motion.label>
-                  ))}
+                        {selectedPages === option.value && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-6 h-6 bg-[#8B1F1F] rounded-full flex items-center justify-center"
+                          >
+                            <Check className="w-4 h-4 text-white" />
+                          </motion.div>
+                        )}
+                      </motion.label>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons */}
               <div className="space-y-3">
