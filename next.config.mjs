@@ -7,7 +7,7 @@ const nextConfig = {
     unoptimized: true,
   },
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-kaaveri-desi.vercel.app';
+    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://api-kaaveri-desi.vercel.app').replace(/\/$/, '');
     return [
       // Unified list of backend prefixes
       { source: '/otp/:path*', destination: `${backendUrl}/otp/:path*` },
