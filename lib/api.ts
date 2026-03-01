@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { encryptData, decryptData } from './crypto-utils';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-kaaveri-desi.vercel.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const apiClient = axios.create({
   baseURL: API_URL,
