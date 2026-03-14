@@ -32,7 +32,6 @@ interface ApiSuccess {
     _id: string;
     name: string;
     email: string;
-    userName: string;
     userid: string;
   };
 }

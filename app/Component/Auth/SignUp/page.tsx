@@ -19,7 +19,6 @@ import {
 
 interface SignupFormData {
   name: string;
-  userName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -37,7 +36,6 @@ export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<SignupFormData>({
     name: '',
-    userName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -61,8 +59,6 @@ export default function SignupPage() {
     switch (field) {
       case 'name':
         return formData.name.length < 2 ? 'Name must be at least 2 characters' : '';
-      case 'userName':
-        return formData.userName.length < 3 ? 'Username must be at least 3 characters' : '';
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return !emailRegex.test(formData.email) ? 'Invalid email address' : '';
@@ -104,7 +100,7 @@ export default function SignupPage() {
 
   // Validate form
   const validateForm = (): boolean => {
-    if (!formData.name || !formData.userName || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email || !formData.password) {
       setError('Please fill in all fields');
       return false;
     }
@@ -143,7 +139,6 @@ export default function SignupPage() {
     try {
       const response = await apiClient.post(`/signup`, {
         name: formData.name,
-        userName: formData.userName,
         email: formData.email.toLowerCase(),
         password: formData.password
       });
@@ -154,7 +149,6 @@ export default function SignupPage() {
       
       setFormData({
         name: '',
-        userName: '',
         email: '',
         password: '',
         confirmPassword: ''
@@ -290,47 +284,7 @@ export default function SignupPage() {
               )}
             </motion.div>
 
-            {/* Username Field */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <label htmlFor="userName" className="block text-sm font-semibold text-gray-700 mb-2">
-                Username
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  id="userName"
-                  name="userName"
-                  value={formData.userName}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('userName')}
-                  className={`w-full pl-11 pr-4 py-2.5 sm:py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#8B1F1F]/20 transition-all text-sm sm:text-base ${
-                    touched.userName && getFieldError('userName')
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-gray-300 focus:border-[#8B1F1F]'
-                  }`}
-                  placeholder="johndoe123"
-                  required
-                />
-                {touched.userName && !getFieldError('userName') && (
-                  <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
-                )}
-              </div>
-              {touched.userName && getFieldError('userName') && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-red-600 text-xs mt-1 flex items-center gap-1"
-                >
-                  <AlertCircle className="w-3 h-3" />
-                  {getFieldError('userName')}
-                </motion.p>
-              )}
-            </motion.div>
+
 
             {/* Email Field */}
             <motion.div

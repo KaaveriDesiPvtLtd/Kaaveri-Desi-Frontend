@@ -35,7 +35,6 @@ interface Order {
 interface User {
     _id: string;
     name: string;
-    userName: string;
     email: string;
     createdAt: string;
     placedOrders: Order[];
@@ -131,10 +130,6 @@ export default function UserDetailsModal({ userId, onClose }: UserDetailsModalPr
                                 <div>
                                     <p className="text-sm text-gray-500">Name</p>
                                     <p className="font-semibold text-gray-800">{user.name}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Username</p>
-                                    <p className="font-semibold text-gray-800">{user.userName}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Email</p>

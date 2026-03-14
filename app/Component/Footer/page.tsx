@@ -1,3 +1,4 @@
+"use client";
 import React from 'react'
 import Link from 'next/link';
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
@@ -8,6 +9,10 @@ import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'luc
 // import "../../Shipping"
 
 function Footer() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <footer className="bg-gradient-to-b from-red-900 to-red-950 text-amber-50 py-16">
       <div className="container mx-auto px-4">
@@ -35,11 +40,28 @@ function Footer() {
           <div>
             <h4 className="text-lg font-bold text-amber-100 mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              <li><Link href="/" className="text-amber-50 hover:text-amber-200 transition">Home</Link></li>
-              <li><Link href="/about" className="text-amber-50 hover:text-amber-200 transition">About Us</Link></li>
-              <li><Link href="/faq" className="text-amber-50 hover:text-amber-200 transition">FAQ</Link></li>
+              <li>
+                <Link 
+                  href="/" 
+                  onClick={scrollToTop}
+                  className="inline-block py-1 text-amber-50 hover:text-amber-200 transition"
+                >
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="inline-block py-1 text-amber-50 hover:text-amber-200 transition">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="inline-block py-1 text-amber-50 hover:text-amber-200 transition">
+                  FAQ
+                </Link>
+              </li>
             </ul>
           </div>
+
 
           {/* Help & Support */}
           <div>

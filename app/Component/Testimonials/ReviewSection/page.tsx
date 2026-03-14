@@ -21,7 +21,7 @@ import {
 
 interface Review {
   _id: string;
-  userName: string;
+  name: string;
   userEmail: string;
   rating: number;
   comment: string;
@@ -62,7 +62,7 @@ function ReviewSection() {
   const [hoveredStar, setHoveredStar] = useState(0);
   
   const [formData, setFormData] = useState({
-    userName: '',
+    name: '',
     userEmail: '',
     rating: 5,
     comment: ''
@@ -95,7 +95,7 @@ function ReviewSection() {
         const user: User = JSON.parse(userData);
         setFormData(prev => ({
           ...prev,
-          userName: user.name || '',
+          name: user.name || '',
           userEmail: user.email || ''
         }));
         setIsLoggedIn(true);
@@ -449,7 +449,7 @@ function ReviewSection() {
                   </label>
                   <input
                     type="text"
-                    value={formData.userName}
+                    value={formData.name}
                     readOnly
                     className="w-full px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl bg-gray-50 cursor-not-allowed font-medium text-sm sm:text-base"
                   />
@@ -642,11 +642,11 @@ function ReviewSection() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-10 h-10 bg-gradient-to-br from-[#8B1F1F] to-[#6B1515] rounded-full flex items-center justify-center text-white font-bold">
-                            {review.userName.charAt(0).toUpperCase()}
+                            {review.name?.charAt(0).toUpperCase() || 'U'}
                           </div>
                           <div>
                             <h3 className="font-bold text-base sm:text-lg text-gray-900">
-                              {review.userName}
+                              {review.name || 'Anonymous User'}
                             </h3>
                             <p className="text-xs text-gray-500">{review.userEmail}</p>
                           </div>

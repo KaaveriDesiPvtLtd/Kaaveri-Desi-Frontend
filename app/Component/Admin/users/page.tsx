@@ -9,7 +9,6 @@ import apiClient from '@/lib/api';
 interface User {
     _id: string;
     name: string;
-    userName: string;
     email: string;
     createdAt: string;
     placedOrders: any[];
@@ -65,7 +64,7 @@ export default function UsersManagement() {
                     <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
-                        placeholder="Search by name, email, or username..."
+                        placeholder="Search by name or email..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -82,7 +81,6 @@ export default function UsersManagement() {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
@@ -93,7 +91,6 @@ export default function UsersManagement() {
                                 {users.map((user) => (
                                     <tr key={user._id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">{user.name}</td>
-                                        <td className="px-6 py-4">{user.userName}</td>
                                         <td className="px-6 py-4">{user.email}</td>
                                         <td className="px-6 py-4">{user.placedOrders?.length || 0}</td>
                                         <td className="px-6 py-4">
